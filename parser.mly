@@ -1,9 +1,5 @@
 %{
-    type prop =
-        | Var of string
-        | Not of prop
-        | And of prop * prop
-        | Or of prop * prop;;
+    open Type;;
 %}
 %token <string> VAR
 %token AND OR
@@ -14,7 +10,7 @@
 %left AND
 %nonassoc NOT
 %start main
-%type <Sat.prop> main
+%type <Type.prop> main
 %%
 main:
     expr EOL { $1 }

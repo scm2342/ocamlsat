@@ -1,4 +1,4 @@
-open Parser
+open Type
 
 let _ =
   try
