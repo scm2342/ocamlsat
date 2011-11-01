@@ -9,6 +9,7 @@ rule token = parse
     | ['a'-'z' 'A'-'Z' '0'-'9']+ as name { VAR(name) }
     | '*' { AND }
     | '+' { OR }
+    | "->" { IMPL }
     | '~' { NOT }
     | '(' { LPAREN }
     | ')' { RPAREN }
