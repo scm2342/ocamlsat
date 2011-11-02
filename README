@@ -1,0 +1,6 @@
+A toy sat solver I wrote mostly one evening after a class in verified software systems at the TUHH.
+Its not fast but it does not require you to enter your formula in cnf or dnf.
+Currently it eats memory because the hashmap I use for the ITE algorithm in bdd.ml puts pointers on many objects in the weak hashmap. I do not care...
+
+Have fun,
+	Sven
