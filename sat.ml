@@ -2,6 +2,8 @@ open Type;;
 open ExtLib;;
 open Bdd;;
 
+let print_string_list xs = print_string "["; List.iter (fun x -> print_string (x ^ ";")) xs; print_string "]";;
+
 let rec print_prop a =
     match a with
         | Var a -> print_string a
@@ -37,7 +39,8 @@ let or_bdd a b = let (_, _, o) = unpack a in ite a (bdd_true o) b;;
 
 let bdd_from_prop prop =
     let ordering = vars prop in
-    let rec bdd_from_prop_aux pprop =
+    print_int (List.length ordering); print_string " : "; print_string_list ordering; print_newline(); print_endline "---------------"; print_newline();
+    let rec bdd_from_prop_aux pprop = print_newline(); print_prop pprop; print_endline ":";
         match pprop with
             | Var a -> bdd_from_var_raw ordering a
             | Not a -> not_bdd_raw (bdd_from_prop_aux a)
@@ -51,7 +54,7 @@ let _ =
         let lexbuf = Lexing.from_channel stdin in
         while true do
             let result = Parser.main Lexer.token lexbuf in
-            print_prop result; print_newline();
+            print_prop result; print_newline(); print_newline();
             let bdd = bdd_from_prop result in
             let (bdd, bit, ord) = unpack bdd in
             print_cOBDD (bdd, bit); print_newline(); flush stdout

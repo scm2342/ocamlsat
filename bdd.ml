@@ -203,13 +203,14 @@ let eval complement fkt fullinput =
     let (bdd, fcompl, _) = unpack fkt in
     eval_aux bdd (complement <> fcompl) fullinput;;
 
-(* This is still a mockup. it will be augmented with memoizing and more terminal cases *)
 let ite_raw (icOBDD, ci) (tcOBDD, ct) (ecOBDD, ce) =
+    let counter = ref 0 in
     let get_sgraphs (graph, bit) = match graph with
         | Terminal -> (Terminal, bit), (Terminal, bit)
         | Node(s, u, c, _) -> (s, bit), (u, bit <> c)
     in
     let rec ite_aux i t e =
+        if !counter >= 1000000 then (print_string "."; flush stdout; counter := 0) else (); incr counter;
         match i with
         | Terminal, false -> t
         | Terminal, true -> e
@@ -219,7 +220,7 @@ let ite_raw (icOBDD, ci) (tcOBDD, ct) (ecOBDD, ce) =
             let (es, eu) = get_sgraphs e in
             cnode (ite_aux is ts es) (ite_aux iu tu eu)
     in
-    ite_aux (icOBDD, ci) (tcOBDD, ct) (ecOBDD, ce);;
+    let res = ite_aux (icOBDD, ci) (tcOBDD, ct) (ecOBDD, ce) in print_newline(); res;;
 let ite if_fkt then_fkt else_fkt =
     let (icOBDD, ci, oi) = unpack if_fkt in
     let (tcOBDD, ct, ot) = unpack then_fkt in
@@ -230,3 +231,38 @@ let ite if_fkt then_fkt else_fkt =
 end;;
 
 include Internal;;
+
+let pretty_dot fkt =
+    let id_counter = ref 3 in
+    let gen_node n partial_ordering = match n with
+        | Terminal -> (2, "n2 [shape=box, label=\"T\"];\n")
+        | Node(_, _, c, t) ->
+            let id = !id_counter in id_counter := id + 1;
+            (id, Printf.sprintf "n%d [label=\"%s - %d\"];\n" id (List.hd partial_ordering) t)
+    in
+    let rec pretty_dot_aux self_id partial_ordering partial_bdd =
+        match partial_bdd with
+            | Terminal -> [""]
+            | Node(s, u, c,_) ->
+                let (s_id, s_def) = gen_node s partial_ordering in
+                let (u_id, u_def) = gen_node u partial_ordering in
+                let dot = Printf.sprintf "%s%sn%d -> n%d\nn%d -> n%d [style=\"%s\"]\n"
+                    s_def u_def self_id s_id self_id u_id (if c then "dotted" else "dashed")
+                in
+                let next_partial_ordering = if partial_ordering = [] then [] else List.tl partial_ordering in
+                dot :: pretty_dot_aux s_id next_partial_ordering s
+                @ pretty_dot_aux u_id next_partial_ordering u
+    in
+    let (bdd, c, ordering) = unpack fkt in
+    let (id, def) = gen_node bdd ordering in
+    let (fstyle, nfstyle) = if c then ("dotted", "solid") else ("solid", "dotted") in
+    let dot = Printf.sprintf "n1 [label=\"f\"];\nn0 [label=\"not f\"];\n%sn1 -> n%d [style=\"%s\"];\nn0 -> n%d [style=\"%s\"]\n"
+        def id fstyle id nfstyle
+    in
+    List.fold_left (^) "" ("digraph Bdd {\n" :: dot :: pretty_dot_aux id (List.tl ordering) bdd @ ["}"]);;
+
+(* Generates dot and writes it to a file *)
+let pretty_dot_to_file file fkt =
+    let fh = open_out file in
+    output_string fh (pretty_dot fkt);
+    close_out fh;;
