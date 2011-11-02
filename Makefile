@@ -9,4 +9,8 @@ all:
 	ocamlfind ocamlc -o sat -package extlib -linkpkg lexer.cmo -linkpkg parser.cmo -linkpkg bdd.cmo -linkpkg type.cmo sat.ml
 
 clean:
-	rm -f type.{cmi,cmo} parser.{ml,mli,cmi,cmo} lexer.{ml,cmi,cmo} bdd.{cmi,cmo} sat{,.cmi,.cmo}
+	rm -f type.{cmi,cmo} parser.{ml,mli,cmi,cmo} lexer.{ml,cmi,cmo} bdd.{cmi,cmo} sat{,.cmi,.cmo} pigeon{,.hi,.o}
+
+test: all
+	ghc -O2 --make pigeon.hs
+	time ./pigeon 9 | ./sat
