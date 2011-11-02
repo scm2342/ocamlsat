@@ -2,8 +2,8 @@ import Data.List
 import Control.Applicative
 import System.Environment
 
-p a b = "p" ++ show a ++ show b
-nponp i j k = "(~p" ++ show i ++ show k ++ "+~p" ++ show j ++ show k ++ ")"
+p a b = "p" ++ show a ++ "l" ++ show b
+nponp i j k = "(~p" ++ show i ++ "l" ++ show k ++ "+~p" ++ show j ++ "l" ++ show k ++ ")"
 
 ci op = (++ ")") . ('(':) . concat . intersperse op
 

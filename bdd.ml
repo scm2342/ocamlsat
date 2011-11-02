@@ -206,22 +206,36 @@ let eval complement fkt fullinput =
     let (bdd, fcompl, _) = unpack fkt in
     eval_aux bdd (complement <> fcompl) fullinput;;
 
+module Memoize_ite = Hashtbl.Make
+    (struct
+        type t = (cOBDD * bool) * (cOBDD * bool) * (cOBDD * bool);;
+        let hash ((a, ac), (b, bc), (c, cc)) = Hashtbl.hash (a, ac, b, bc, c, cc);;
+        let equal ((a1, ac1), (b1, bc1), (c1, cc1)) ((a2, ac2), (b2, bc2), (c2, cc2)) = ac1 = ac2 && bc1 = bc2 && cc1 = cc2 && a1 == a2 && b1 == b2 && c1 == c2;;
+    end);;
+let memoize_ite = Memoize_ite.create 101;;
 let ite_raw (icOBDD, ci) (tcOBDD, ct) (ecOBDD, ce) =
-    let counter = ref 0 in
+    let nohitcounter = ref 0 in
+    let hitcounter = ref 0 in
     let get_sgraphs (graph, bit) = match graph with
         | Terminal -> (Terminal, bit), (Terminal, bit)
         | Node(s, u, c, _) -> (s, bit), (u, bit <> c)
     in
     let rec ite_aux i t e =
-        if !counter >= 1000000 then (print_string "."; flush stdout; counter := 0) else (); incr counter;
-        match i with
-        | Terminal, false -> t
-        | Terminal, true -> e
-        | _ ->
-            let (is, iu) = get_sgraphs i in
-            let (ts, tu) = get_sgraphs t in
-            let (es, eu) = get_sgraphs e in
-            cnode (ite_aux is ts es) (ite_aux iu tu eu)
+        let key = (i, t, e) in
+        try
+            let res = Memoize_ite.find memoize_ite key in
+            if !hitcounter >= 1000 then (print_string "+"; flush stdout; hitcounter := 0) else (); incr hitcounter; res
+        with Not_found ->
+            if !nohitcounter >= 1000 then (print_string "."; flush stdout; nohitcounter := 0) else (); incr nohitcounter;
+            match i with
+            | Terminal, false -> t
+            | Terminal, true -> e
+            | _ ->
+                let (is, iu) = get_sgraphs i in
+                let (ts, tu) = get_sgraphs t in
+                let (es, eu) = get_sgraphs e in
+                let res = cnode (ite_aux is ts es) (ite_aux iu tu eu) in
+                Memoize_ite.replace memoize_ite key res; res
     in
     let res = ite_aux (icOBDD, ci) (tcOBDD, ct) (ecOBDD, ce) in print_newline(); res;;
 let ite if_fkt then_fkt else_fkt =
