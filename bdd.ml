@@ -1,3 +1,7 @@
+(* Written by Sven Mattsen sven@sven.cc
+ * License: You use this however you want (but let this notice in), I am not liable for anything...
+ * If you use this, please send me an eMail
+ *)
 module Internal: sig
 (* cOBDD: complemented ordered decision diagram *)
 type cOBDD = private
