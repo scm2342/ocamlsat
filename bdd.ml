@@ -1,5 +1,3 @@
-open ExtLib;;
-
 module Internal: sig
 (* cOBDD: complemented ordered decision diagram *)
 type cOBDD = private
@@ -118,6 +116,11 @@ module Hashconsing_Table = Weak.Make
 
 (*BISECT-IGNORE-BEGIN*) (* this is not tested since it is only a helper function *)
 let rec print_cOBDD (graph, bit) =
+    let print_bool b =
+        match b with
+            | true -> print_string "True"
+            | false -> print_string "False"
+    in
     match graph with
         | Terminal ->
             print_string "(Terminal, ";
